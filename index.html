@@ -135,8 +135,8 @@
       const node = document.getElementById('exportCard');
       const canvas = await html2canvas(node, {backgroundColor: null, scale:2});
       const url = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = url; a.download = 'water-cost.png'; a.click();
+      // Open image in a new tab (works best on iPhone)
+      window.open(url, '_blank');
     }
 
     document.getElementById('update').addEventListener('click', update);
