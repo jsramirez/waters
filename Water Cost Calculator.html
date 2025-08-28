@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Water Cost Calculator – Image Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    :root{
+      --blue:#1856b3; --blue2:#1f6bdf; --light:#f4f7ff; --ink:#0f172a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; padding:16px; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#eef3ff; color:#0b1640}
+    .wrap{max-width:640px; margin:0 auto}
+    .card{background:white; border-radius:18px; box-shadow:0 10px 30px rgba(24,86,179,.12); overflow:hidden}
+    h1{font-family:Montserrat, Inter, sans-serif; margin:0; font-weight:800; color:var(--blue); font-size:clamp(20px,4.8vw,30px); text-align:center; padding:18px 16px 8px}
+    .panel{background:#154aa0; color:#fff; padding:14px 16px}
+    .row{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed rgba(255,255,255,.25)}
+    .row:last-child{border-bottom:none}
+    .sig{font-weight:700}
+    .big{font-family:Montserrat, Inter, sans-serif; font-weight:800; font-size:clamp(24px,8vw,42px); letter-spacing:.5px}
+    .subhead{background:#0f3f8d; color:#fff; padding:12px 16px; font-weight:800; font-family:Montserrat, Inter, sans-serif}
+    .jugs{display:grid; grid-template-columns:repeat(6,1fr); gap:8px; padding:10px 14px 18px; background:#e8f0ff}
+    .jug{width:100%; aspect-ratio:1/1;}
+    .controls{margin:10px 0 16px; background:white; border-radius:14px; box-shadow:0 6px 18px rgba(24,86,179,.10); padding:12px}
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    label{font-size:12px; color:#0b255a}
+    input{width:100%; padding:12px 10px; font-size:16px; border:1px solid #c7d7ff; border-radius:12px}
+    .btns{display:flex; gap:10px; margin-top:10px}
+    button{flex:1; padding:12px 14px; border:none; border-radius:12px; background:var(--blue2); color:#fff; font-weight:700; font-size:15px; box-shadow:0 8px 16px rgba(31,107,223,.25);}
+    button.secondary{background:#0f3f8d}
+    .foot{font-size:12px; color:#355; text-align:center; margin-top:8px}
+    #exportCard{border-radius:18px; overflow:hidden}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- Inputs -->
+    <div class="controls">
+      <div class="grid">
+        <div>
+          <label>Containers per week</label>
+          <input id="containers" type="number" inputmode="numeric" value="5" min="0" />
+        </div>
+        <div>
+          <label>Price per container (₱)</label>
+          <input id="price" type="number" inputmode="decimal" value="40" min="0" />
+        </div>
+      </div>
+      <div class="btns">
+        <button id="update">Update</button>
+        <button id="download" class="secondary">Save as Image</button>
+      </div>
+      <div class="foot">Tip: Adjust inputs then tap <b>Save as Image</b> to share the PNG with prospects.</div>
+    </div>
+
+    <!-- Exportable card -->
+    <div id="exportCard" class="card">
+      <h1>How much do you spend on your drinking water?</h1>
+      <div class="panel" id="breakdown"></div>
+      <div class="subhead">Lifetime cost of bottled water</div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:10px; padding:14px 16px; background:#e8f0ff">
+        <div class="big" id="lifetime">₱0</div>
+      </div>
+      <div class="jugs" id="jugGrid"></div>
+    </div>
+
+  </div>
+
+  <template id="jugSvg">
+    <svg class="jug" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#bfe1ff"/>
+          <stop offset="100%" stop-color="#7fb4ff"/>
+        </linearGradient>
+      </defs>
+      <rect x="14" y="14" width="36" height="42" rx="8" fill="url(#g)" stroke="#1d5fd6" stroke-width="2"/>
+      <rect x="22" y="8" width="20" height="8" rx="3" fill="#1d5fd6"/>
+      <rect x="14" y="26" width="36" height="4" fill="#1d5fd6" opacity="0.25"/>
+    </svg>
+  </template>
+
+  <script>
+    const fmt = new Intl.NumberFormat('en-PH',{style:'currency', currency:'PHP', maximumFractionDigits:0});
+    const els = {
+      containers: document.getElementById('containers'),
+      price: document.getElementById('price'),
+      breakdown: document.getElementById('breakdown'),
+      lifetime: document.getElementById('lifetime'),
+      jugGrid: document.getElementById('jugGrid')
+    };
+
+    function line(label, value){
+      const div = document.createElement('div');
+      div.className = 'row';
+      div.innerHTML = `<div>${label}</div><div class="sig">${value}</div>`;
+      return div;
+    }
+
+    function renderJugs(count){
+      const grid = els.jugGrid; grid.innerHTML = '';
+      const svg = document.getElementById('jugSvg').content.firstElementChild;
+      const n = Math.min(24, Math.max(6, Math.round(count)));
+      for(let i=0;i<n;i++){ grid.appendChild(svg.cloneNode(true)); }
+    }
+
+    function update(){
+      const c = +els.containers.value || 0;
+      const p = +els.price.value || 0;
+
+      const weekly = c * p;
+      const monthly = weekly * 4;
+      const yearly = monthly * 12;
+      const fiveYear = yearly * 5;
+      const lifetime = 500000;
+
+      els.breakdown.innerHTML = '';
+      els.breakdown.append(
+        line(`${c} containers × ${fmt.format(p)} =`, fmt.format(weekly)),
+        line(`${fmt.format(weekly)} × 4 weeks =`, fmt.format(monthly)),
+        line(`${fmt.format(monthly)} × 12 months =`, fmt.format(yearly)),
+        line(`${fmt.format(yearly)} × 5 years =`, fmt.format(fiveYear)),
+      );
+      els.lifetime.textContent = `${fmt.format(lifetime)}!!`;
+
+      renderJugs(Math.min(24, Math.max(6, monthly / 200)));
+    }
+
+    async function download(){
+      const node = document.getElementById('exportCard');
+      const canvas = await html2canvas(node, {backgroundColor: null, scale:2});
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url; a.download = 'water-cost.png'; a.click();
+    }
+
+    document.getElementById('update').addEventListener('click', update);
+    document.getElementById('download').addEventListener('click', download);
+    ['input','change'].forEach(ev=>{
+      for(const id of ['containers','price']){
+        els[id].addEventListener(ev, update);
+      }
+    });
+
+    update();
+  </script>
+</body>
+</html>
