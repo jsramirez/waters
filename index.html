@@ -120,7 +120,7 @@
 
       els.breakdown.innerHTML = '';
       els.breakdown.append(
-        line(`${c} containers × ${fmt.format(p)} =`, fmt.format(weekly)),
+        line(`${c} containers × ${fmt.format(p)} =`, fmt.format(weekly)`/week`),
         line(`${fmt.format(weekly)} × 4 weeks =`, fmt.format(monthly)),
         line(`${fmt.format(monthly)} × 12 months =`, fmt.format(yearly)),
         line(`${fmt.format(yearly)} × 5 years =`, fmt.format(fiveYear)),
